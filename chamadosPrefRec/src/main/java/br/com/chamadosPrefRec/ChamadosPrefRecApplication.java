@@ -1,4 +1,4 @@
-package br.com.chamadosPrefRec;
+package br.com.chamadosprefrec;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
