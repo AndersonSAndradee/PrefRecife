@@ -7,8 +7,10 @@ import java.util.Optional;
 import br.com.chamadosprefrec.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    public boolean existByEmail(String email);
+public interface UserRepository extends JpaRepository<User, Long>{
+
+    boolean existsByCpf(String cpf);
+    boolean existsByEmail(String email);
     Optional<User> findByEmail(String email);
  
 }

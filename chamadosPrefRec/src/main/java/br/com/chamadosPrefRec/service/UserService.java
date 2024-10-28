@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import br.com.chamadosprefrec.repository.RoleRepository;
 import br.com.chamadosprefrec.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import br.com.chamadosprefrec.util.PasswordValidator;
@@ -11,28 +12,37 @@ import org.slf4j.Logger;
 
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.List;
 
 import br.com.chamadosprefrec.handler.BusinessException;
 import br.com.chamadosprefrec.model.User;
+import br.com.chamadosprefrec.model.Role;
+
  
 @Service
 public class UserService {
 
     //Usando framework de logging para exibir mensagens como Logs
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    @Autowired
-    UserRepository userRepository;
 
     @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RoleRepository roleRepository;
 
     //Criar usuário
     @Transactional
     public User registerUser(User user){
         try{
             //Bloco de validação de criação de usuário
-            if (userRepository.existByEmail(user.getEmail())) {
+            if (userRepository.existsByEmail(user.getEmail())) {
                 throw new BusinessException("Email já está cadastrado. Por favor, utilize um endereço de email diferente.");
+            }
+
+            if (userRepository.existsByCpf(user.getCpf())) {
+                throw new BusinessException("O CPF informado já está cadastrado no sistema. Verifique se você já possui uma conta ou utilize um CPF diferente.");
             }
 
             if (!PasswordValidator.isSenhaSegura(user.getPassword())) {
@@ -40,7 +50,14 @@ public class UserService {
             }
             //Bloco de validação Security password add
 
-
+            // Obter roles do banco
+            Set<Role> managedRoles = new HashSet<>();
+            for (Role role : user.getRoles()) {
+                Role managedRole = roleRepository.findById(role.getRoleId())
+                                                .orElseThrow(() -> new BusinessException("Role não encontrada"));
+                managedRoles.add(managedRole);
+            }
+            user.setRoles(managedRoles);
 
             return userRepository.save(user);
 

@@ -14,8 +14,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
 
 @Entity
+@Table(name = "tb_user")
 public class User {
 
     @Id
@@ -41,7 +44,6 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDate createdAt;
 
-    // Criação de uma tábela auxiliar entre Usuário e Role
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(
         name = "user_roles",

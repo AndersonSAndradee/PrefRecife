@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "tb_roles")
 public class Role {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id")
@@ -17,8 +18,6 @@ public class Role {
 
     @Column(nullable = false)
     private String name;
-
-    // Getters and setters
 
     public Long getRoleId() {
         return roleId;
@@ -31,7 +30,7 @@ public class Role {
     public void setName(String name) {
         this.name = name;
     }
-    // Builder
+
     public enum Values {
         ADMIN(1L),
         BASIC(2L);
