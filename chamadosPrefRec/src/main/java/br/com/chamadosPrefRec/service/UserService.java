@@ -2,6 +2,7 @@ package br.com.chamadosprefrec.service;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import br.com.chamadosprefrec.repository.RoleRepository;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
+
 
 import br.com.chamadosprefrec.handler.BusinessException;
 import br.com.chamadosprefrec.model.User;
@@ -32,6 +34,9 @@ public class UserService {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     //Criar usuário
     @Transactional
     public User registerUser(User user){
@@ -48,7 +53,9 @@ public class UserService {
             if (!PasswordValidator.isSenhaSegura(user.getPassword())) {
                 throw new BusinessException("A senha não atende aos requisitos de segurança.");
             }
-            //Bloco de validação Security password add
+            //Security password add
+            String encorder = passwordEncoder.encode(user.getPassword());
+            user.setPassword(encorder);
 
             // Obter roles do banco
             Set<Role> managedRoles = new HashSet<>();
@@ -61,8 +68,9 @@ public class UserService {
 
             return userRepository.save(user);
 
-        } catch (BusinessException e) {
-            throw e;
+        } catch (BusinessException be) {
+            logger.error("Erro de negócio: {}", be.getMessage());
+            throw be;
         } catch (Exception e ) {
             logger.error("Erro ao tentar cadastrar usuário: {}", e.getMessage());
             throw new RuntimeException("Erro ao tentar cadastrar usuário.", e);
@@ -91,18 +99,33 @@ public class UserService {
         }
     }
 
+
     //Deletar usuários
     @Transactional
     public void deleteUser(Long id) {
         try {
-            if (!userRepository.existsById(id)) {
-                throw new BusinessException("O usuário selecionado não existe!");
-            }
+            // Obtém o usuário a ser deletado, lançando uma exceção se não for encontrado
+            User user = userRepository.findById(id)
+                        .orElseThrow(() -> new BusinessException("O usuário selecionado não existe!"));
+
+            // Limpa as referências de roles para remover as associações na tabela user_roles
+            user.getRoles().clear();
+
+            // Salva o usuário atualizado para refletir as mudanças
+            userRepository.save(user);
+            
+            // Agora, deletar o usuário
             userRepository.deleteById(id);
+        } catch (BusinessException be) {
+            // Se for uma BusinessException, loga e relança
+            logger.error("Erro de negócio: {}", be.getMessage());
+            throw be; // Relança a exceção para o chamador
         } catch (Exception e) {
             logger.error("Erro ao tentar deletar usuário: {}", e.getMessage());
+            throw new RuntimeException("Erro ao tentar deletar o usuário."); // Lança uma RuntimeException
         }
     }
+
 
     // Metodo para atualizar usuário (Adicionar o encoder após o password ser alterado)
     @Transactional
@@ -116,9 +139,7 @@ public class UserService {
         }
 
         existingUser.setUsername(usuario.getUsername());
-        existingUser.setEmail(usuario.getEmail());
-
-        
+        existingUser.setEmail(usuario.getEmail());   
 
         return userRepository.save(existingUser);
     }
